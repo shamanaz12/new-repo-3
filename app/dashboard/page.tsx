@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Task } from '../../types';
-import Header from '../../components/Header/Header';
 import Button from '../../components/UI/Button';
 import { Card, CardContent } from '../../components/UI/Card';
 import ChatWidget from '../../components/Chat/ChatWidget';
+import { getUser, localSignOut } from '../../lib/local-auth';
 
 // Local Storage Key - shared with ChatWidget
 const STORAGE_KEY = 'taskflow_chat_tasks';
@@ -45,15 +47,23 @@ const DashboardPageContent = () => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
     // Load tasks from localStorage
     const localTasks = getLocalTasks();
     setTasks(localTasks);
+    // Get user
+    setUser(getUser());
   }, []);
+
+  const handleLogout = async () => {
+    await localSignOut();
+    router.push('/');
+  };
 
   const filteredTasks = tasks
     .filter(task => {
@@ -176,43 +186,55 @@ const DashboardPageContent = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-50">
-      <Header />
+      {/* Custom Header with User Info */}
+      <header className="bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg">
+        <div className="max-w-6xl mx-auto px-4 py-4">
+          <div className="flex justify-between items-center">
+            <Link href="/" className="flex items-center space-x-2">
+              <div className="bg-white p-2 rounded-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </div>
+              <span className="text-xl font-bold">TaskFlow</span>
+            </Link>
+
+            <div className="flex items-center space-x-4">
+              {user && (
+                <span className="text-emerald-100">
+                  Welcome, <strong>{user.name}</strong>!
+                </span>
+              )}
+              <Link href="/" className="px-4 py-2 bg-white/20 rounded-lg hover:bg-white/30 transition">
+                Home
+              </Link>
+              {user ? (
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 bg-white text-emerald-600 rounded-lg font-medium hover:bg-emerald-50 transition"
+                >
+                  Sign Out
+                </button>
+              ) : (
+                <Link href="/login" className="px-4 py-2 bg-white text-emerald-600 rounded-lg font-medium hover:bg-emerald-50 transition">
+                  Sign In
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+
       <ChatWidget />
       <main className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-700 bg-clip-text text-transparent mb-4">
-            Todo Dashboard
+        {/* Page Title */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-700 bg-clip-text text-transparent mb-2">
+            My Tasks
           </h1>
-          <p className="text-xl text-gray-700 max-w-2xl mx-auto mb-8">
-            Manage your tasks with beautiful light green design
+          <p className="text-gray-600">
+            Manage your tasks efficiently
           </p>
-          <div className="text-left text-gray-800 max-w-2xl mx-auto space-y-3 p-6 bg-white rounded-xl shadow-lg border border-emerald-100">
-            <h2 className="text-2xl font-bold text-emerald-700 mb-3">1️⃣ Ye “TaskFlow” kya hai?</h2>
-            <p className="text-lg leading-relaxed">
-              TaskFlow ek Task / To-Do Management Web App hai. Iska simple matlab:
-            </p>
-            <ul className="list-none space-y-2">
-              <li className="flex items-start">
-                <span className="mr-2 text-emerald-600">👉</span>
-                <span>User apne daily kaam (tasks) likh asakta hai</span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-2 text-emerald-600">👉</span>
-                <span>Un tasks ko dekh, edit, delete kar sakta hai</span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-2 text-emerald-600">👉</span>
-                <span>Apni zindagi / kaam ko organize karne ke liye</span>
-              </li>
-            </ul>
-            <p className="text-lg font-semibold mt-4">Jaise:</p>
-            <ul className="list-disc list-inside text-gray-700 space-y-1 ml-4">
-              <li>doodh lana</li>
-              <li>office ka kaam</li>
-              <li>personal reminders</li>
-            </ul>
-          </div>
         </div>
 
         {/* Stats Cards - Light Green Theme */}
